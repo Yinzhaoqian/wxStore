@@ -4,6 +4,7 @@ const routes = {
   '/logs': LogsModule,
   '/delivery-update': DeliveryUpdateModule,
   '/delivery-compensate': DeliveryCompensateModule,
+  '/notice': NoticeModule,
 };
 
 function navigate() {
