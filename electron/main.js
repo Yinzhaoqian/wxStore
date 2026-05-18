@@ -3,10 +3,12 @@ const path = require('path');
 const net = require('net');
 const fs = require('fs');
 const crypto = require('crypto');
+const https = require('https');
+const http = require('http');
 
 const PORT = 3001;
-const LICENSE_SECRET = 'XD-WX-STORE-2026-TRIAL';
-const TRIAL_DURATION_MS = 30 * 60 * 1000; // 30 分钟
+// ↓ 部署到服务器后改成正式地址，如 https://your-domain.com
+const LICENSE_SERVER = 'http://localhost:4000';
 
 let mainWindow = null;
 let agreementWindow = null;
@@ -28,20 +30,13 @@ function getSessionFile() {
   return path.join(app.getPath('userData'), '.session.json');
 }
 
-function validateKeyChecksum(key) {
-  const raw = key.replace(/-/g, '').toUpperCase();
-  if (raw.length !== 16) return false;
-  if (!/^[0-9A-F]{16}$/.test(raw)) return false;
-  const payload = raw.slice(0, 12);
-  const checksum = raw.slice(12, 16);
-  const expected = crypto
-    .createHmac('sha256', LICENSE_SECRET)
-    .update(payload)
-    .digest('hex')
-    .toUpperCase()
-    .slice(0, 4);
-  return checksum === expected;
-}
+// 机器唯一标识（hostname + username 的哈希）
+const os = require('os');
+const MACHINE_ID = crypto
+  .createHash('sha256')
+  .update(os.hostname() + (os.userInfo().username || ''))
+  .digest('hex')
+  .slice(0, 16);
 
 function readSession() {
   try {
@@ -54,54 +49,74 @@ function readSession() {
 function writeSession(key, expiresAt) {
   fs.writeFileSync(getSessionFile(), JSON.stringify({
     key: key.toUpperCase(),
-    usedAt: new Date().toISOString(),
-    expiresAt: new Date(expiresAt).toISOString(),
+    activatedAt: new Date().toISOString(),
+    expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
   }), 'utf-8');
 }
 
-// 检查当前会话是否仍然有效，返回剩余毫秒数或 0
 function getActiveSessionRemainingMs() {
   const session = readSession();
-  if (!session || !session.expiresAt) return 0;
+  if (!session) return 0;
+  if (!session.expiresAt) return Infinity; // 永久卡密
   const remaining = new Date(session.expiresAt).getTime() - Date.now();
   return remaining > 0 ? remaining : 0;
 }
 
-// 尝试使用密匙：返回 { ok, message, remainingMs }
+// 向卡密服务器请求验证，返回 Promise<{ ok, message, remainingMs }>
 function activateKey(key) {
-  const normalized = key.replace(/-/g, '').toUpperCase();
-  const formatted = normalized.match(/.{4}/g).join('-');
-
-  if (!validateKeyChecksum(formatted)) {
-    return { ok: false, message: '密匙格式错误或无效，请检查后重新输入' };
-  }
-
-  const session = readSession();
-  if (session && session.key === formatted) {
-    // 同一个密匙：检查是否仍在有效期
-    const remaining = new Date(session.expiresAt).getTime() - Date.now();
-    if (remaining > 0) {
-      return { ok: true, remainingMs: remaining };
-    } else {
-      return { ok: false, message: '此密匙已过期（30 分钟试用已结束），请使用新密匙' };
+  return new Promise((resolve) => {
+    const normalized = (key.replace(/-/g, '').toUpperCase().match(/.{4}/g) || []).join('-');
+    if (!normalized || normalized.length < 4) {
+      return resolve({ ok: false, message: '卡密格式错误' });
     }
-  }
 
-  if (session && session.key !== formatted) {
-    // 不同的密匙：检查旧密匙是否已用过（记录在案就算用过）
-    // 只要 session 文件存在说明之前已激活过一个密匙
-    const remaining = getActiveSessionRemainingMs();
-    if (remaining > 0) {
-      return { ok: false, message: '当前已有活跃会话，无需再次激活' };
+    // 先检查本地缓存的会话
+    const session = readSession();
+    if (session && session.key === normalized) {
+      const remaining = getActiveSessionRemainingMs();
+      if (remaining > 0) {
+        return resolve({ ok: true, remainingMs: remaining === Infinity ? 0 : remaining });
+      }
     }
-    // 旧会话已过期，但新密匙也需要验证是否是"曾经用过的密匙"
-    // 为简单起见：每次只允许一个密匙被记录，新密匙可以激活（覆盖旧会话）
-    // 如需严格防止复用同一密匙，需要维护已用密匙列表（此处不做）
-  }
 
-  const expiresAt = Date.now() + TRIAL_DURATION_MS;
-  writeSession(formatted, expiresAt);
-  return { ok: true, remainingMs: TRIAL_DURATION_MS };
+    // 请求远程服务器验证
+    const body = JSON.stringify({ key: normalized, machineId: MACHINE_ID });
+    const url = new URL('/api/validate', LICENSE_SERVER);
+    const mod = url.protocol === 'https:' ? https : http;
+
+    const req = mod.request({
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      timeout: 8000,
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.valid) {
+            writeSession(normalized, json.expiresAt || null);
+            const remainingMs = json.expiresAt
+              ? Math.max(0, new Date(json.expiresAt).getTime() - Date.now())
+              : 0;
+            resolve({ ok: true, remainingMs });
+          } else {
+            resolve({ ok: false, message: json.message || '卡密无效' });
+          }
+        } catch {
+          resolve({ ok: false, message: '服务器响应异常，请重试' });
+        }
+      });
+    });
+
+    req.on('error', () => resolve({ ok: false, message: '无法连接到授权服务器，请检查网络' }));
+    req.on('timeout', () => { req.destroy(); resolve({ ok: false, message: '授权服务器连接超时，请重试' }); });
+    req.write(body);
+    req.end();
+  });
 }
 
 // ===== 等待端口就绪 =====
@@ -303,10 +318,10 @@ ipcMain.on('agreement-rejected', () => {
   app.quit();
 });
 
-ipcMain.on('license-validate', (_, key) => {
-  const result = activateKey(key);
+ipcMain.on('license-validate', async (_, key) => {
+  const result = await activateKey(key);
   if (result.ok) {
-    isTransitioning = true; // 先置标志，再销毁窗口，防止 closed 事件触发 quit
+    isTransitioning = true;
     if (licenseWindow && !licenseWindow.isDestroyed()) {
       licenseWindow.destroy();
       licenseWindow = null;
