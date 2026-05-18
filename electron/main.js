@@ -140,6 +140,7 @@ function waitForPort(port, timeout = 15000) {
 
 function startCountdown(remainingMs) {
   if (countdownTimer) clearInterval(countdownTimer);
+  if (!remainingMs || remainingMs <= 0) return; // 永久卡密不显示倒计时
 
   const injectBadge = (ms) => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
