@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>XD工具 — 授权验证</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; }
+  body {
+    background: #1a1a1a;
+    color: #e8e0d4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-app-region: drag;
+  }
+  .card {
+    background: #242424;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 40px 44px;
+    width: 420px;
+    -webkit-app-region: no-drag;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .logo svg { color: #c4a96a; }
+  .logo-text { font-size: 17px; font-weight: 600; color: #e8e0d4; }
+  .logo-sub { font-size: 12px; color: #6b6055; margin-top: 2px; }
+  h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #c4a96a;
+    margin-bottom: 8px;
+  }
+  p {
+    font-size: 13px;
+    color: #8a7a6a;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: #6b6055;
+    margin-bottom: 8px;
+    letter-spacing: 0.03em;
+  }
+  input {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #3a3530;
+    border-radius: 7px;
+    padding: 11px 14px;
+    font-size: 15px;
+    font-family: 'Courier New', monospace;
+    color: #e8e0d4;
+    letter-spacing: 0.15em;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+    text-transform: uppercase;
+  }
+  input::placeholder { color: #3a3530; letter-spacing: 0.1em; font-size: 13px; }
+  input:focus { border-color: #c4a96a; }
+  input.error { border-color: #c0392b; }
+  .error-msg {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #e74c3c;
+    min-height: 18px;
+  }
+  .btn {
+    margin-top: 24px;
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .btn-primary {
+    background: #c4a96a;
+    color: #1a1a1a;
+  }
+  .btn-primary:hover { background: #d4b97a; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .hint {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #4a4035;
+    text-align: center;
+    line-height: 1.7;
+  }
+  .divider {
+    border: none;
+    border-top: 1px solid #2a2a2a;
+    margin: 24px 0 0;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+    </svg>
+    <div>
+      <div class="logo-text">XD工具</div>
+      <div class="logo-sub">微信小店管理</div>
+    </div>
+  </div>
+
+  <h2>客户验收授权</h2>
+  <p>请输入您收到的授权密匙以激活试用。<br/>激活后可使用 <strong style="color:#c4a96a">30 分钟</strong>，期间关闭重开不影响计时。</p>
+
+  <label>授权密匙</label>
+  <input id="key-input" type="text" maxlength="19"
+    placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false"/>
+  <div class="error-msg" id="err-msg"></div>
+
+  <button class="btn btn-primary" id="btn-activate" disabled>激活</button>
+
+  <hr class="divider"/>
+  <p class="hint">密匙由开发方提供，每个密匙仅限使用一次。<br/>如需更多时间，请联系开发方获取新密匙。</p>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+
+const input = document.getElementById('key-input');
+const btn = document.getElementById('btn-activate');
+const errMsg = document.getElementById('err-msg');
+
+// 自动格式化输入为 XXXX-XXXX-XXXX-XXXX
+input.addEventListener('input', () => {
+  let val = input.value.replace(/[^A-Fa-f0-9]/g, '').toUpperCase();
+  if (val.length > 16) val = val.slice(0, 16);
+  const parts = [];
+  for (let i = 0; i < val.length; i += 4) parts.push(val.slice(i, i + 4));
+  input.value = parts.join('-');
+  errMsg.textContent = '';
+  input.classList.remove('error');
+  btn.disabled = val.length < 16;
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !btn.disabled) activate();
+});
+
+btn.addEventListener('click', activate);
+
+function activate() {
+  const key = input.value.trim();
+  btn.disabled = true;
+  errMsg.textContent = '';
+  ipcRenderer.send('license-validate', key);
+}
+
+ipcRenderer.on('license-result', (_, result) => {
+  if (result.ok) {
+    // 主进程会关闭此窗口并打开主窗口
+  } else {
+    input.classList.add('error');
+    errMsg.textContent = result.message || '密匙无效';
+    btn.disabled = false;
+    input.focus();
+  }
+});
+
+input.focus();
+</script>
+</body>
+</html>

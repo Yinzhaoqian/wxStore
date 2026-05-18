@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>使用协议 — XD工具</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #1a1a1a;
+      color: #e8e3db;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+      -webkit-app-region: drag;
+    }
+
+    /* 标题栏 */
+    .titlebar {
+      background: #111;
+      padding: 16px 24px 14px;
+      border-bottom: 1px solid #2a2a2a;
+      flex-shrink: 0;
+    }
+    .titlebar h1 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f0ebe3;
+      letter-spacing: 0.5px;
+    }
+    .titlebar p {
+      font-size: 11px;
+      color: #888;
+      margin-top: 3px;
+    }
+
+    /* 协议内容区域 */
+    .content-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      -webkit-app-region: no-drag;
+    }
+
+    .content {
+      height: 100%;
+      overflow-y: auto;
+      padding: 24px 32px;
+      scroll-behavior: smooth;
+    }
+
+    .content::-webkit-scrollbar { width: 6px; }
+    .content::-webkit-scrollbar-track { background: #1a1a1a; }
+    .content::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+    .content::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+
+    /* 渐变遮罩提示继续滚动 */
+    .scroll-fade {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 6px;
+      height: 60px;
+      background: linear-gradient(transparent, #1a1a1a);
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    .scroll-fade.hidden { opacity: 0; }
+
+    /* 协议文字排版 */
+    .agreement h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #f5f0e8;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+    .agreement .meta {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 6px;
+    }
+    .agreement .intro {
+      font-size: 13px;
+      color: #c8c0b0;
+      line-height: 1.9;
+      margin-bottom: 6px;
+      padding: 14px 16px;
+      background: #222;
+      border-left: 3px solid #c4a96a;
+      border-radius: 0 6px 6px 0;
+    }
+    .agreement hr {
+      border: none;
+      border-top: 1px solid #2e2e2e;
+      margin: 20px 0;
+    }
+    .agreement .article {
+      margin-bottom: 24px;
+    }
+    .agreement .article-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e8c97a;
+      margin-bottom: 10px;
+    }
+    .agreement .article p {
+      font-size: 13px;
+      color: #b8b0a0;
+      line-height: 1.9;
+      margin-bottom: 8px;
+    }
+    .agreement .article ul {
+      margin: 6px 0 6px 20px;
+    }
+    .agreement .article ul li {
+      font-size: 13px;
+      color: #b0a898;
+      line-height: 1.85;
+      margin-bottom: 2px;
+    }
+    .agreement .article ol {
+      margin: 6px 0 6px 20px;
+    }
+    .agreement .article ol li {
+      font-size: 13px;
+      color: #b0a898;
+      line-height: 1.85;
+      margin-bottom: 3px;
+    }
+    .agreement .end-note {
+      margin-top: 28px;
+      padding: 16px;
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.8;
+    }
+
+    /* 底部按钮区 */
+    .footer {
+      background: #111;
+      border-top: 1px solid #2a2a2a;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+    .footer .hint {
+      flex: 1;
+      font-size: 12px;
+      color: #666;
+    }
+    .footer .hint.ready {
+      color: #7a9e7a;
+    }
+    .btn-reject {
+      padding: 8px 20px;
+      background: transparent;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      color: #888;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-reject:hover {
+      border-color: #e05555;
+      color: #e05555;
+      background: rgba(224,85,85,0.05);
+    }
+    .btn-agree {
+      padding: 8px 24px;
+      background: #c4a96a;
+      border: none;
+      border-radius: 6px;
+      color: #1a1200;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .btn-agree.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .btn-agree.active:hover {
+      background: #d4b97a;
+    }
+  </style>
+</head>
+<body>
+  <div class="titlebar">
+    <h1>XD工具 — 使用协议与免责声明</h1>
+    <p>请阅读完整协议后方可同意，滚动至底部解锁确认按钮</p>
+  </div>
+
+  <div class="content-wrap">
+    <div class="content" id="scrollArea">
+      <div class="agreement">
+        <h1>《XD工具 使用协议与免责声明》</h1>
+        <p class="meta">版本 v1.0 &nbsp;|&nbsp; 生效日期：2026-05-17</p>
+
+        <p class="intro">
+          请使用者在安装、启动、登录或使用本软件前仔细阅读本协议全部内容。<br/>
+          使用者一旦点击"我已阅读并同意"、安装、启动、登录、使用本软件，或以其他方式实际使用本软件，即视为已充分阅读、理解并同意接受本协议全部内容的约束。<br/><br/>
+          如不同意本协议任何内容，请立即停止安装和使用本软件，并删除全部相关文件及数据。
+        </p>
+
+        <hr/>
+
+        <div class="article">
+          <p class="article-title">第一条 软件性质说明</p>
+          <p>本软件是一款运行于使用者本地设备环境中的辅助管理工具，仅用于使用者对其合法拥有、合法控制或经合法授权管理的微信小店账号进行辅助操作。</p>
+          <p>本软件并非微信官方软件，与微信、腾讯及任何第三方平台不存在任何隶属、代理、授权或合作关系。</p>
+          <p>本软件仅提供技术辅助功能，不参与、不控制、不干预使用者的经营行为、订单处理、物流管理、营销活动或其他商业行为。</p>
+          <p>所有操作均由使用者自行决定并主动执行。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第二条 使用者资格与承诺</p>
+          <p>使用者承诺并保证：</p>
+          <ol>
+            <li>已年满十八周岁，具备完全民事行为能力；</li>
+            <li>对使用本软件操作的全部账号拥有合法使用权，或已取得完整、有效、可追溯的合法授权；</li>
+            <li>使用本软件不违反所在地法律法规及相关平台规则；</li>
+            <li>已自行阅读、理解并接受微信小店、微信开放平台及其他相关平台规则；</li>
+            <li>不会利用本软件从事违法违规、侵犯第三方权益或扰乱平台秩序的行为；</li>
+            <li>不会利用本软件从事任何未经授权的商业代运营、非法数据处理、灰黑产业务或违反平台规范的活动；</li>
+            <li>理解并接受：账号的最终管理责任、经营责任及法律责任均由账号实际控制人承担，而非开发者承担。</li>
+          </ol>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第三条 使用者平台合规义务</p>
+          <p>使用者应自行确认其使用行为符合相关平台规则、开放平台协议及所在地法律法规。</p>
+          <p>开发者不对使用者行为是否符合第三方平台要求作任何保证。</p>
+          <p>因平台规则调整、平台风控措施、接口限制、账号处罚、功能下线或其他平台原因导致的后果，由使用者自行承担。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第四条 软件授权范围</p>
+          <p>开发者授予使用者一项有限的、非独占的、不可转授权、不可转让的个人使用许可。</p>
+          <p>使用者仅可在合法范围内使用本软件，包括但不限于：</p>
+          <ul>
+            <li>查询订单信息；</li>
+            <li>查询物流状态；</li>
+            <li>更新物流信息；</li>
+            <li>本机管理店铺账号；</li>
+            <li>平台允许范围内的数据辅助操作。</li>
+          </ul>
+          <p>除本协议明确允许外，使用者不得以任何方式使用本软件。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第五条 禁止行为</p>
+          <p>使用者不得利用本软件从事包括但不限于以下行为：</p>
+          <ol>
+            <li>刷单、虚假交易、伪造物流信息；</li>
+            <li>骗取平台补贴、流量、活动资格、评价或其他不正当利益；</li>
+            <li>干扰、破坏或攻击第三方平台安全机制；</li>
+            <li>未经授权操作第三方账号；</li>
+            <li>实施违法违规的数据抓取、数据收集或信息泄露行为；</li>
+            <li>从事网络诈骗、赌博、洗钱、非法经营或其他违法活动；</li>
+            <li>逆向工程、反编译、破解、修改、注入、篡改本软件；</li>
+            <li>删除、隐藏或修改本软件版权标识；</li>
+            <li>传播、出租、出售、共享本软件；</li>
+            <li>利用本软件实施任何违反中华人民共和国法律法规或平台规则的行为。</li>
+          </ol>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第六条 数据、隐私与账号安全</p>
+          <ol>
+            <li>本软件默认仅在使用者本地设备环境中运行；</li>
+            <li>账号凭据（包括但不限于 Cookie、Token、Session、会话信息）默认仅存储于使用者本地设备；</li>
+            <li>除实现软件基础功能、安全验证、版本更新、错误诊断或必要安全措施所需外，本软件不会主动上传使用者账号凭据等敏感信息；</li>
+            <li>使用者应自行负责本机环境安全，包括但不限于：
+              <ul style="margin-top:4px;">
+                <li>设置系统密码；</li>
+                <li>使用正版系统；</li>
+                <li>安装安全软件；</li>
+                <li>防止木马、病毒及恶意程序；</li>
+                <li>妥善保管账号信息；</li>
+              </ul>
+            </li>
+            <li>因以下原因导致的数据泄露、账号异常、资金损失、店铺处罚或其他损失，由使用者自行承担：
+              <ul style="margin-top:4px;">
+                <li>使用者主动泄露账号信息；</li>
+                <li>使用者设备被入侵；</li>
+                <li>使用者运行恶意程序；</li>
+                <li>第三方窃取数据；</li>
+                <li>网络攻击；</li>
+                <li>使用者误操作；</li>
+                <li>第三方平台安全问题。</li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第七条 第三方平台与接口免责</p>
+          <p>本软件部分功能依赖第三方平台接口或服务，包括但不限于：</p>
+          <ul>
+            <li>微信小店开放平台；</li>
+            <li>微信开放平台；</li>
+            <li>第三方物流接口；</li>
+            <li>网络服务提供商。</li>
+          </ul>
+          <p>使用者理解并同意：</p>
+          <ol>
+            <li>第三方平台接口、服务或规则可能随时调整、限制、关闭、升级或终止；</li>
+            <li>第三方平台可能因安全策略、风控策略或其他原因导致账号异常、验证限制或功能受限；</li>
+            <li>第三方接口数据可能存在延迟、错误、不完整或不可用情况；</li>
+            <li>开发者无法控制第三方平台行为；</li>
+            <li>开发者不保证第三方平台接口、服务或相关功能持续、稳定、永久可用；</li>
+            <li>因第三方平台原因导致的软件功能异常、部分失效或无法使用，开发者在适用法律允许的最大范围内不承担责任。</li>
+          </ol>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第八条 软件现状提供（AS IS）</p>
+          <p>本软件按"现状（AS IS）"提供。开发者不对以下事项作任何明示或默示保证：</p>
+          <ol>
+            <li>软件持续稳定运行；</li>
+            <li>软件不存在缺陷、中断或错误；</li>
+            <li>软件符合使用者特定商业目的；</li>
+            <li>软件不存在潜在安全风险；</li>
+            <li>软件与所有系统、设备、网络环境完全兼容；</li>
+            <li>软件功能永久有效；</li>
+            <li>软件不会因第三方平台调整而受到影响。</li>
+          </ol>
+          <p>使用者应自行评估并承担使用风险。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第九条 风险提示</p>
+          <p>使用者理解并确认：使用第三方辅助管理工具可能存在包括但不限于以下风险：</p>
+          <ul>
+            <li>登录异常；账号限制；平台验证；接口限频；功能不可用；</li>
+            <li>数据异常；店铺处罚；网络异常；第三方服务中断。</li>
+          </ul>
+          <p>上述风险属于互联网平台服务可能存在的固有风险，由使用者自行承担。</p>
+          <p>开发者不承诺规避任何平台规则、平台限制或平台安全机制。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第十条 责任限制与免责</p>
+          <p>在适用法律允许的最大范围内：</p>
+          <ol>
+            <li>使用者因违反法律法规、平台规则、本协议或第三方协议导致的任何后果，由使用者自行承担；</li>
+            <li>开发者不对因第三方平台规则调整、接口变更关闭限频、平台风控措施、网络故障、系统异常、不可抗力、第三方服务异常、使用者误操作或设备安全问题导致的损失承担责任；</li>
+            <li>开发者不对任何间接损失、附带损失、特殊损失或商业损失承担责任，包括但不限于账号限制、店铺处罚、订单损失、数据丢失、利润损失、商誉损失、客户流失、经营中断；</li>
+            <li>开发者承担的全部责任总额，以使用者实际支付的软件费用为上限；如使用者未支付任何费用，则责任上限为人民币壹佰元整。</li>
+          </ol>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第十一条 软件更新、中止与停止维护</p>
+          <p>开发者有权基于技术、安全、运营、法律法规、平台政策或其他原因修改软件功能、暂停或终止部分功能、停止软件更新或维护、调整软件使用方式或终止软件运营。</p>
+          <p>使用者理解并接受软件可能存在停止维护、停止更新或终止运营的风险。在适用法律允许的最大范围内，开发者无需因此承担责任。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第十二条 条款独立性</p>
+          <p>本协议任一条款被认定无效、违法或不可执行的，不影响其他条款的效力。双方应以合法、有效且最接近原条款目的的内容替代之。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第十三条 协议解释与补充</p>
+          <p>本协议未尽事宜，按照中华人民共和国相关法律法规执行。如本协议部分条款与法律法规相冲突，以法律法规规定为准，其余条款仍保持有效。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第十四条 法律适用与争议解决</p>
+          <p>本协议的订立、效力、解释、履行及争议解决均适用中华人民共和国法律。</p>
+          <p>因本协议产生的争议，双方应优先友好协商解决；协商不成的，任一方有权向开发者所在地有管辖权的人民法院提起诉讼。</p>
+        </div>
+
+        <div class="article">
+          <p class="article-title">第十五条 知悉确认</p>
+          <p>使用者点击"我已阅读并同意"即表示：</p>
+          <ul>
+            <li>已完整阅读本协议；</li>
+            <li>已充分理解本协议全部内容；</li>
+            <li>已知悉相关平台规则及使用风险；</li>
+            <li>愿意自行承担使用后果；</li>
+            <li>同意接受本协议全部约束。</li>
+          </ul>
+          <p>如不同意本协议任何内容，请立即停止使用并删除本软件。</p>
+        </div>
+
+        <div class="end-note">
+          —— 本协议终 ——<br/>
+          协议版本：v1.0 &nbsp;|&nbsp; 生效日期：2026-05-17
+        </div>
+      </div>
+    </div>
+    <div class="scroll-fade" id="scrollFade"></div>
+  </div>
+
+  <div class="footer">
+    <span class="hint" id="hintText">↓ 请滚动阅读完整协议后方可同意</span>
+    <button class="btn-reject" id="btnReject">不同意，退出</button>
+    <button class="btn-agree" id="btnAgree">我已阅读并同意</button>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const scrollArea = document.getElementById('scrollArea');
+    const scrollFade = document.getElementById('scrollFade');
+    const btnAgree  = document.getElementById('btnAgree');
+    const btnReject = document.getElementById('btnReject');
+    const hintText  = document.getElementById('hintText');
+
+    let scrolledToBottom = false;
+
+    function checkScroll() {
+      const { scrollTop, scrollHeight, clientHeight } = scrollArea;
+      const remaining = scrollHeight - scrollTop - clientHeight;
+      if (remaining < 40 && !scrolledToBottom) {
+        scrolledToBottom = true;
+        btnAgree.classList.add('active');
+        scrollFade.classList.add('hidden');
+        hintText.textContent = '已阅读完整协议，可点击同意继续使用';
+        hintText.className = 'hint ready';
+      }
+    }
+
+    scrollArea.addEventListener('scroll', checkScroll);
+    // 如果内容不足以滚动，直接解锁
+    window.addEventListener('load', () => {
+      checkScroll();
+    });
+
+    btnAgree.addEventListener('click', () => {
+      if (!scrolledToBottom) return;
+      ipcRenderer.send('agreement-accepted');
+    });
+
+    btnReject.addEventListener('click', () => {
+      ipcRenderer.send('agreement-rejected');
+    });
+  </script>
+</body>
+</html>

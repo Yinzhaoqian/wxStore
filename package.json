@@ -1,0 +1,54 @@
+{
+  "name": "wxstore",
+  "version": "1.0.0",
+  "description": "微信小店管理系统",
+  "main": "electron/main.js",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "dev": "nodemon server/app.js",
+    "start": "node server/app.js",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"nodemon server/app.js\" \"wait-on http://localhost:3001 && electron .\"",
+    "dist": "node scripts/build.js",
+    "dist:paid": "node scripts/build.js --paid"
+  },
+  "dependencies": {
+    "axios": "^1.16.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^35.7.5",
+    "electron-builder": "^25.1.8",
+    "electron-packager": "^17.1.2",
+    "nodemon": "^3.1.14",
+    "wait-on": "^8.0.5"
+  },
+  "build": {
+    "appId": "com.wxstore.manager",
+    "productName": "微信小店管理系统",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "server/**/*",
+      "public/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "sign": false
+    }
+  }
+}
