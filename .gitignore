@@ -2,10 +2,20 @@ node_modules/
 dist-electron/
 dist/
 .env
-.env.example
 stores.json
 .agreement
 .session.json
 build.log
 *.tgz
 .claude/
+operation-logs.json
+
+# Electron 运行时文件（误跑到根目录时忽略）
+*.dll
+*.pak
+*.bin
+*.html
+locales/
+resources/
+*.exe
+!scripts/

@@ -124,34 +124,36 @@ const LogsModule = {
         : '<span class="inline-flex items-center gap-1 text-red-500 text-xs font-medium"><span class="w-1.5 h-1.5 rounded-full bg-red-400 inline-block"></span>失败</span>';
       const typeBadge = `<span class="px-2 py-0.5 rounded text-xs font-medium ${typeColor[r.type] || 'bg-warm-100 text-warm-600'}">${typeLabel[r.type] || r.type}</span>`;
 
+      const storeEsc = (r.storeName || '').replace(/"/g, '&quot;');
+      const notesEsc = (r.notes || '').replace(/"/g, '&quot;');
       return `<tr class="border-t border-warm-100 hover:bg-warm-50 transition-colors">
-        <td class="px-4 py-2.5 text-xs text-warm-500 whitespace-nowrap">${timeStr}</td>
-        <td class="px-4 py-2.5">${typeBadge}</td>
-        <td class="px-4 py-2.5 text-sm text-warm-700">${r.storeName || '—'}</td>
-        <td class="px-4 py-2.5 text-sm text-warm-500">${r.buyerName || '—'}</td>
-        <td class="px-4 py-2.5 font-mono text-xs text-warm-700">${r.orderId || '—'}</td>
-        <td class="px-4 py-2.5 font-mono text-xs text-warm-600">${r.waybillId || '—'}</td>
-        <td class="px-4 py-2.5 text-xs text-warm-500">${r.deliveryId || '—'}</td>
-        <td class="px-4 py-2.5">${resultBadge}</td>
-        <td class="px-4 py-2.5 text-xs text-warm-400">${r.duration != null ? r.duration + 'ms' : '—'}</td>
-        <td class="px-4 py-2.5 text-xs ${r.result === 'fail' ? 'text-red-400' : 'text-warm-400'} max-w-48 truncate" title="${(r.notes || '').replace(/"/g, '&quot;')}">${r.notes || '—'}</td>
+        <td class="px-3 py-2 text-xs text-warm-500 whitespace-nowrap">${timeStr}</td>
+        <td class="px-3 py-2 whitespace-nowrap">${typeBadge}</td>
+        <td class="px-3 py-2 text-xs text-warm-700 max-w-[7rem] truncate" title="${storeEsc}">${r.storeName || '—'}</td>
+        <td class="px-3 py-2 text-xs text-warm-500 whitespace-nowrap">${r.buyerName || '—'}</td>
+        <td class="px-3 py-2 font-mono text-xs text-warm-700 whitespace-nowrap">${r.orderId || '—'}</td>
+        <td class="px-3 py-2 font-mono text-xs text-warm-600 whitespace-nowrap">${r.waybillId || '—'}</td>
+        <td class="px-3 py-2 text-xs text-warm-500 whitespace-nowrap">${r.deliveryId || '—'}</td>
+        <td class="px-3 py-2 whitespace-nowrap">${resultBadge}</td>
+        <td class="px-3 py-2 text-xs text-warm-400 whitespace-nowrap">${r.duration != null ? r.duration + 'ms' : '—'}</td>
+        <td class="px-3 py-2 text-xs ${r.result === 'fail' ? 'text-red-400' : 'text-warm-400'} max-w-[10rem] truncate" title="${notesEsc}">${r.notes || '—'}</td>
       </tr>`;
     }).join('');
 
     wrap.innerHTML = `
       <table class="w-full text-left text-sm">
-        <thead class="bg-warm-50 text-xs text-warm-500 uppercase tracking-wide">
+        <thead class="bg-warm-50 text-xs text-warm-500 uppercase tracking-wide border-b border-warm-200">
           <tr>
-            <th class="px-4 py-2.5 font-medium">时间</th>
-            <th class="px-4 py-2.5 font-medium">类型</th>
-            <th class="px-4 py-2.5 font-medium">店铺</th>
-            <th class="px-4 py-2.5 font-medium">买家</th>
-            <th class="px-4 py-2.5 font-medium">订单号</th>
-            <th class="px-4 py-2.5 font-medium">快递单号</th>
-            <th class="px-4 py-2.5 font-medium">快递</th>
-            <th class="px-4 py-2.5 font-medium">结果</th>
-            <th class="px-4 py-2.5 font-medium">耗时</th>
-            <th class="px-4 py-2.5 font-medium">备注</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">时间</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">类型</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">店铺</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">买家</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">订单号</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">快递单号</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">快递</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">结果</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">耗时</th>
+            <th class="px-3 py-2 font-medium whitespace-nowrap">备注</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

@@ -10,7 +10,7 @@ const path = require('path');
 const fs = require('fs');
 
 const noAuth = process.argv.includes('--no-auth');
-const appName = noAuth ? 'XD管理-免验证' : 'XD管理';
+const appName = noAuth ? 'XD管理-内部版' : 'XD管理-专业版';
 const mainEntry = noAuth ? 'electron/main-paid.js' : 'electron/main.js';
 
 const now = new Date();
