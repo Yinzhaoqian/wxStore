@@ -1,8 +1,13 @@
 const DeliveryUpdateModule = {
   currentOrder: null,
   oldExpress: null,
+  _savedOrderId: '',
 
   init(container) {
+    // 离开前先保存当前输入框的值
+    const existing = document.getElementById('du-order-id');
+    if (existing) this._savedOrderId = existing.value;
+
     container.innerHTML = `
       <h2 class="text-xl font-semibold text-warm-800 mb-4">修改物流</h2>
       <div class="card p-5 mb-4">
@@ -42,6 +47,10 @@ const DeliveryUpdateModule = {
       if (e.key === 'Enter') this.searchOrder();
     });
     document.getElementById('du-company').innerHTML = buildCompanyOptions();
+    // 恢复上次输入的订单号
+    if (this._savedOrderId) {
+      document.getElementById('du-order-id').value = this._savedOrderId;
+    }
   },
 
   async searchOrder() {

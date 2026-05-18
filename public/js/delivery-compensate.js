@@ -1,8 +1,13 @@
 const DeliveryCompensateModule = {
   currentOrder: null,
   _products: [],
+  _savedOrderId: '',
 
   init(container) {
+    // 离开前先保存当前输入框的值
+    const existing = document.getElementById('dc-order-id');
+    if (existing) this._savedOrderId = existing.value;
+
     container.innerHTML = `
       <h2 class="text-xl font-semibold text-warm-800 mb-4">补发订单</h2>
       <div class="card p-5 mb-4">
@@ -53,6 +58,10 @@ const DeliveryCompensateModule = {
       if (e.key === 'Enter') this.searchOrder();
     });
     document.getElementById('dc-company').innerHTML = buildCompanyOptions();
+    // 恢复上次输入的订单号
+    if (this._savedOrderId) {
+      document.getElementById('dc-order-id').value = this._savedOrderId;
+    }
   },
 
   async searchOrder() {
