@@ -278,8 +278,8 @@ function openAgreementWindow() {
 
 function openLicenseWindow() {
   licenseWindow = new BrowserWindow({
-    width: 500,
-    height: 420,
+    width: 520,
+    height: 500,
     resizable: false,
     maximizable: false,
     title: 'XD工具 — 授权验证',
