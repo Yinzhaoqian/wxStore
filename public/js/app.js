@@ -1,7 +1,7 @@
 const routes = {
   '/store-config': StoreConfigModule,
   '/shop': ShopModule,
-  '/orders': OrderModule,
+  '/logs': LogsModule,
   '/delivery-update': DeliveryUpdateModule,
   '/delivery-compensate': DeliveryCompensateModule,
 };

@@ -35,13 +35,19 @@ const API = {
     return this.request('/orders/detail', { order_id: orderId });
   },
 
-  // data: { order_id, old_express, new_delivery_id, new_waybill_id }
+  // data: { order_id, old_express, new_delivery_id, new_waybill_id, buyer_name }
   updateDelivery(data) {
     return this.request('/delivery/update', data);
   },
 
-  // data: { order_id, reason, delivery_id, waybill_id, product_infos }
+  // data: { order_id, reason, delivery_id, waybill_id, product_infos, buyer_name }
   compensateDelivery(data) {
     return this.request('/delivery/compensate', data);
+  },
+
+  // params: { type, search, startDate, endDate, page, pageSize }
+  getLogs(params = {}) {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
+    return this.request(`/logs${qs ? '?' + qs : ''}`, null, 'GET');
   },
 };

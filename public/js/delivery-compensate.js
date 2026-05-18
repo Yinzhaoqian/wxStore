@@ -158,6 +158,7 @@ const DeliveryCompensateModule = {
         delivery_id: deliveryId,
         waybill_id: waybillId,
         product_infos: selectedProducts,
+        buyer_name: this.currentOrder?.buyerInfo?.nickName || '',
       });
       statusEl.className = 'ml-3 text-sm text-green-600';
       statusEl.textContent = '补发成功！';

@@ -137,6 +137,7 @@ const DeliveryUpdateModule = {
         old_express: this.oldExpress,
         new_delivery_id: deliveryId,
         new_waybill_id: waybillId,
+        buyer_name: this.currentOrder?.buyerInfo?.nickName || '',
       });
       statusEl.className = 'ml-3 text-sm text-green-600';
       statusEl.textContent = '物流信息修改成功！';

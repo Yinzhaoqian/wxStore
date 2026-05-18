@@ -4,6 +4,7 @@ const config = require('./config');
 const orderRoutes = require('./routes/order');
 const deliveryRoutes = require('./routes/delivery');
 const storeConfigRoutes = require('./routes/store-config');
+const logsRoutes = require('./routes/logs');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.static(publicDir));
 app.use('/api', storeConfigRoutes);
 app.use('/api', orderRoutes);
 app.use('/api', deliveryRoutes);
+app.use('/api', logsRoutes);
 
 app.listen(config.port, () => {
   console.log('');
