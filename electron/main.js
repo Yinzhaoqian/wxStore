@@ -7,8 +7,7 @@ const https = require('https');
 const http = require('http');
 
 const PORT = 3001;
-// ↓ 部署到服务器后改成正式地址，如 https://your-domain.com
-const LICENSE_SERVER = 'http://localhost:4000';
+const LICENSE_SERVER = 'http://123.57.141.65:4000';
 
 let mainWindow = null;
 let agreementWindow = null;
@@ -339,8 +338,8 @@ ipcMain.on('license-validate', async (_, key) => {
 function afterAgreement() {
   const remainingMs = getActiveSessionRemainingMs();
   if (remainingMs > 0) {
-    // 有效会话，直接打开主窗口
-    openMainWindow(remainingMs);
+    // 有效会话，直接打开主窗口（永久卡密传 0 表示不显示倒计时）
+    openMainWindow(remainingMs === Infinity ? 0 : remainingMs);
   } else {
     // 需要输入授权密匙
     openLicenseWindow();
