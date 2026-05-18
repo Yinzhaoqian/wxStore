@@ -11,7 +11,8 @@
     "electron": "electron .",
     "electron:dev": "concurrently \"nodemon server/app.js\" \"wait-on http://localhost:3001 && electron .\"",
     "dist": "node scripts/build.js",
-    "dist:paid": "node scripts/build.js --paid"
+    "dist:paid": "node scripts/build.js --paid",
+    "clean": "powershell -Command \"Get-ChildItem dist-electron -Directory | ForEach-Object { Remove-Item $_.FullName -Recurse -Force; Write-Host ('已删除: ' + $_.Name) }\""
   },
   "dependencies": {
     "axios": "^1.16.1",
